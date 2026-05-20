@@ -258,3 +258,26 @@ function app() {
 
   return _component;
 }
+
+// Standalone login function — callable from native onclick without Alpine
+window.asmLogin = async function () {
+  if (!supabase) {
+    alert('Supabase not loaded — check your network connection and reload.');
+    return;
+  }
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: { redirectTo: SITE_URL },
+    });
+    if (error) {
+      alert('OAuth error: ' + error.message);
+    } else if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      alert('No redirect URL from Supabase — check GitHub OAuth config.');
+    }
+  } catch (e) {
+    alert('Login error: ' + e.message);
+  }
+};
