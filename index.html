@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASM Presets — Community Preset Sharing</title>
-  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <!-- Alpine moved to end of body so window.app is defined first -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     /* =====================================================
@@ -648,7 +648,7 @@
     }
   </style>
 </head>
-<body x-data="app" x-init="init()">
+<body x-data="app()" x-init="init()">
 
   <!-- ============================================================
        HEADER
@@ -1258,9 +1258,11 @@
       return _component;
     }
 
-    document.addEventListener('alpine:init', () => {
-      Alpine.data('app', _appFactory);
-    });
+    // Expose as global so x-data="app()" can call it
+    window.app = _appFactory;
   </script>
+
+  <!-- Alpine AFTER our script so window.app exists when Alpine starts -->
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </body>
 </html>
