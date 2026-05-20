@@ -948,7 +948,14 @@
             </span>
           </div>
 
-          <!-- Actions -->
+          <!-- Debug state (always visible in submit mode) -->
+          <div style="font-size:0.72rem;color:var(--text-secondary);background:var(--bg-button);border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:0.5rem;">
+            <span x-text="user ? '✓ Connected as ' + (user.user_metadata?.user_name || user.email) : '✗ Not connected'"></span>
+            &nbsp;·&nbsp;
+            <span x-text="form.link ? 'Link OK (' + form.link.length + ' chars)' : '⚠ Link empty'"></span>
+          </div>
+
+          <!-- Error display -->
           <div x-show="form.error" class="submit-error" x-text="form.error"></div>
 
           <div class="form-actions">
@@ -959,9 +966,10 @@
             <button
               class="btn-submit"
               @click="submitPreset()"
-              :disabled="!user || submitting || !form.name.trim() || !form.link.trim()"
+              :disabled="submitting"
             >
-              <span x-show="!submitting">Submit Preset</span>
+              <span x-show="!submitting && !user">Sign in &amp; Publish</span>
+              <span x-show="!submitting && user">Submit Preset</span>
               <span x-show="submitting">Submitting…</span>
             </button>
           </div>
@@ -1051,22 +1059,11 @@
           // Listen for auth changes (OAuth implicit redirect fires SIGNED_IN here)
           supabase.auth.onAuthStateChange((event, session) => {
             this.user = session?.user ?? null;
-            if (this.user) {
-              this.loadMyVotes();
-              // After login, restore a pending submit form saved before redirect
-              const saved = localStorage.getItem('asm_pending_form');
-              if (saved) {
-                try {
-                  const f = JSON.parse(saved);
-                  Object.assign(this.form, f);
-                  this.mode = 'submit';
-                } catch (_) {}
-                localStorage.removeItem('asm_pending_form');
-              }
-            }
+            if (this.user) this.loadMyVotes();
+            if (event === 'SIGNED_IN') this._restorePendingForm();
           });
 
-          // Read URL params
+          // Read URL params for submit mode
           const params = new URLSearchParams(window.location.search);
           if (params.get('submit') === '1') {
             this.mode = 'submit';
@@ -1075,10 +1072,27 @@
             this.form.channel = params.get('channel') || 'Game';
             this.form.device  = params.get('device')  || '';
             this.form.game    = params.get('game')    || this.form.name;
+          } else {
+            // No URL params: might be returning from OAuth — try localStorage
+            this._restorePendingForm();
           }
 
           if (this.user) await this.loadMyVotes();
           await this.loadPresets();
+        },
+
+        _restorePendingForm() {
+          const saved = localStorage.getItem('asm_pending_form');
+          if (!saved) return;
+          try {
+            const f = JSON.parse(saved);
+            if (Date.now() - (f._ts || 0) < 10 * 60 * 1000) {
+              delete f._ts;
+              Object.assign(this.form, f);
+              this.mode = 'submit';
+            }
+          } catch (_) {}
+          localStorage.removeItem('asm_pending_form');
         },
 
         // ──────────────────────────────────────────────────────
@@ -1109,14 +1123,12 @@
 
         // ──────────────────────────────────────────────────────
         async loginWithGitHub() {
-          // Persist form before redirect so it survives the OAuth round-trip
-          if (this.mode === 'submit' && this.form.link) {
-            localStorage.setItem('asm_pending_form', JSON.stringify({
-              link: this.form.link, name: this.form.name,
-              game: this.form.game, channel: this.form.channel,
-              device: this.form.device,
-            }));
-          }
+          // Persist form before redirect (with timestamp to avoid stale restores)
+          localStorage.setItem('asm_pending_form', JSON.stringify({
+            link: this.form.link, name: this.form.name,
+            game: this.form.game, channel: this.form.channel,
+            device: this.form.device, _ts: Date.now(),
+          }));
           await supabase.auth.signInWithOAuth({
             provider: 'github',
             options: { redirectTo: SITE_URL },
@@ -1160,7 +1172,14 @@
 
         // ──────────────────────────────────────────────────────
         async submitPreset() {
+          this.form.error = '';
           if (!this.user) { this.loginWithGitHub(); return; }
+          if (!this.form.name.trim()) {
+            this.form.error = 'Please enter a preset name.'; return;
+          }
+          if (!this.form.link.trim()) {
+            this.form.error = 'No preset data. Use "Publish to community" from ASM export dialog.'; return;
+          }
           this.submitting = true;
 
           // Try to decode the data payload from the deep link
