@@ -664,10 +664,6 @@
       <span class="tagline">Community EQ presets for Arctis Sound Manager</span>
 
       <div class="header-actions">
-        <template x-if="mode === 'browse' && !$el.closest('[x-data]').getAttribute('x-data')?.includes('submit')">
-          <!-- always show submit button in browse mode -->
-        </template>
-
         <button class="btn-ghost" @click="mode = (mode === 'submit' ? 'browse' : 'submit')" x-show="mode === 'browse'">
           + Share Preset
         </button>
