@@ -671,7 +671,7 @@
         <!-- Auth zone — onclick natif sur window.asmLogin (fonctionne sans Alpine) -->
         <button
           class="btn-ghost"
-          onclick="window.asmLogin ? window.asmLogin() : alert('app.js not loaded — check network')"
+          onclick="window.asmLogin ? window.asmLogin() : alert('app.js not loaded\nasmLogin=' + typeof window.asmLogin + '\nasmLoaded=' + window.__asmLoaded + '\nsupabase=' + typeof window.supabase)"
           style="display:flex;align-items:center;gap:0.4rem;"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">

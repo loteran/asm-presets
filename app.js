@@ -3,6 +3,35 @@
 // Loaded as external file to avoid inline-script CSP blocking
 // ============================================================
 
+// Défini EN PREMIER — si le fichier charge, ce symbole existe
+window.__asmLoaded = true;
+
+// Login standalone défini immédiatement, avant tout code risqué
+window.asmLogin = async function () {
+  var url = 'https://pdvfjlxlsltsozmqsxek.supabase.co';
+  var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkdmZqbHhsc2x0c296bXFzeGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODk5NTMsImV4cCI6MjA5NDg2NTk1M30.JRoXwQY5xPl1SM86fKcEm0D06hFa1QsNSmZkdBN7K5U';
+  var site = 'https://loteran.github.io/asm-presets/';
+  try {
+    var sb = window.supabase
+      ? window.supabase.createClient(url, key, { auth: { persistSession: true } })
+      : null;
+    if (!sb) { alert('Supabase not available — reload the page.'); return; }
+    var result = await sb.auth.signInWithOAuth({
+      provider: 'github',
+      options: { redirectTo: site },
+    });
+    if (result.error) {
+      alert('OAuth error: ' + result.error.message);
+    } else if (result.data && result.data.url) {
+      window.location.href = result.data.url;
+    } else {
+      alert('No redirect URL from Supabase.');
+    }
+  } catch (e) {
+    alert('Login error: ' + e.message);
+  }
+};
+
 const SUPABASE_URL      = 'https://pdvfjlxlsltsozmqsxek.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkdmZqbHhsc2x0c296bXFzeGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODk5NTMsImV4cCI6MjA5NDg2NTk1M30.JRoXwQY5xPl1SM86fKcEm0D06hFa1QsNSmZkdBN7K5U';
 const SITE_URL          = 'https://loteran.github.io/asm-presets/';
