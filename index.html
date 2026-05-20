@@ -665,7 +665,7 @@
 
       <div class="header-actions">
         <!-- DEBUG -->
-        <button onclick="alert('Alpine=' + (typeof window.Alpine) + ' | app=' + (typeof window.__app) + ' | supabase=' + (typeof window.supabase))" style="background:#c00;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;">Debug</button>
+        <button onclick="alert('Alpine=' + (typeof window.Alpine) + ' | appFn=' + (typeof window.app) + ' | __app=' + (typeof window.__app))" style="background:#c00;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;">Debug</button>
 
         <button class="btn-ghost" @click="mode = 'submit'">
           + Share Preset
