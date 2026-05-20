@@ -8,12 +8,12 @@ window.__asmLoaded = true;
 
 // Login standalone défini immédiatement, avant tout code risqué
 window.asmLogin = async function () {
-  var url = 'https://pdvfjlxlsltsozmqsxek.supabase.co';
+  var url = 'https://pdvfjlxlsltsozmqsxek._sb.co';
   var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkdmZqbHhsc2x0c296bXFzeGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODk5NTMsImV4cCI6MjA5NDg2NTk1M30.JRoXwQY5xPl1SM86fKcEm0D06hFa1QsNSmZkdBN7K5U';
   var site = 'https://loteran.github.io/asm-presets/';
   try {
     var sb = window.supabase
-      ? window.supabase.createClient(url, key, { auth: { persistSession: true } })
+      ? window._sb.createClient(url, key, { auth: { persistSession: true } })
       : null;
     if (!sb) { alert('Supabase not available — reload the page.'); return; }
     var result = await sb.auth.signInWithOAuth({
@@ -32,13 +32,13 @@ window.asmLogin = async function () {
   }
 };
 
-const SUPABASE_URL      = 'https://pdvfjlxlsltsozmqsxek.supabase.co';
+const SUPABASE_URL      = 'https://pdvfjlxlsltsozmqsxek._sb.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkdmZqbHhsc2x0c296bXFzeGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODk5NTMsImV4cCI6MjA5NDg2NTk1M30.JRoXwQY5xPl1SM86fKcEm0D06hFa1QsNSmZkdBN7K5U';
 const SITE_URL          = 'https://loteran.github.io/asm-presets/';
 
-let supabase;
+let _sb;
 try {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  _sb = window._sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: true },
   });
 } catch (e) {
@@ -81,10 +81,10 @@ function app() {
     async init() {
       window.__app = this;
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await _sb.auth.getSession();
       this.user = session?.user ?? null;
 
-      supabase.auth.onAuthStateChange((event, session) => {
+      _sb.auth.onAuthStateChange((event, session) => {
         this.user = session?.user ?? null;
         if (this.user) this.loadMyVotes();
         if (event === 'SIGNED_IN') this._restorePendingForm();
@@ -123,7 +123,7 @@ function app() {
     // ──────────────────────────────────────────────────────
     async loadMyVotes() {
       if (!this.user) return;
-      const { data } = await supabase
+      const { data } = await _sb
         .from('votes')
         .select('preset_id')
         .eq('user_id', this.user.id);
@@ -133,7 +133,7 @@ function app() {
     // ──────────────────────────────────────────────────────
     async loadPresets() {
       this.loading = true;
-      let query = supabase.from('presets').select('*');
+      let query = _sb.from('presets').select('*');
       if (this.search)        query = query.ilike('name',   `%${this.search}%`);
       if (this.filterChannel) query = query.eq('channel',   this.filterChannel);
       if (this.filterDevice)  query = query.ilike('device', `%${this.filterDevice}%`);
@@ -153,7 +153,7 @@ function app() {
         game: this.form.game, channel: this.form.channel,
         device: this.form.device, _ts: Date.now(),
       }));
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await _sb.auth.signInWithOAuth({
         provider: 'github',
         options: { redirectTo: SITE_URL },
       });
@@ -167,7 +167,7 @@ function app() {
     },
 
     async logout() {
-      await supabase.auth.signOut();
+      await _sb.auth.signOut();
     },
 
     // ──────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ function app() {
 
     async toggleVote(preset) {
       if (!this.user) { this.loginWithGitHub(); return; }
-      const { data, error } = await supabase.rpc('toggle_vote', { p_preset_id: preset.id });
+      const { data, error } = await _sb.rpc('toggle_vote', { p_preset_id: preset.id });
       if (!error && data) {
         preset.vote_count = data.vote_count;
         if (data.voted) this.myVotes.add(preset.id);
@@ -216,7 +216,7 @@ function app() {
         decodedData  = JSON.parse(atob(padded + pad));
       } catch (_) {}
 
-      const { error } = await supabase.from('presets').insert({
+      const { error } = await _sb.from('presets').insert({
         name:          this.form.name.trim(),
         game:          (this.form.game || this.form.name).trim(),
         channel:       this.form.channel,
@@ -267,7 +267,7 @@ function app() {
     async deletePreset(preset) {
       if (!confirm(`Delete "${preset.name}"? This cannot be undone.`)) return;
       this.deletingId = preset.id;
-      const { error } = await supabase
+      const { error } = await _sb
         .from('presets')
         .delete()
         .eq('id', preset.id)
@@ -290,12 +290,12 @@ function app() {
 
 // Standalone login function — callable from native onclick without Alpine
 window.asmLogin = async function () {
-  if (!supabase) {
+  if (!_sb) {
     alert('Supabase not loaded — check your network connection and reload.');
     return;
   }
   try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await _sb.auth.signInWithOAuth({
       provider: 'github',
       options: { redirectTo: SITE_URL },
     });
