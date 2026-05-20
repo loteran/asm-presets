@@ -1001,7 +1001,7 @@
     // Alpine app
     // ============================================================
     function app() {
-      return {
+      const _component = {
         // ── Auth
         user: null,
 
@@ -1034,9 +1034,6 @@
 
         // ──────────────────────────────────────────────────────
         async init() {
-          // Expose this component globally so onclick handlers can reach it
-          window.__app = this;
-
           // Restore session (implicit flow puts tokens in hash; getSession() picks them up)
           const { data: { session } } = await supabase.auth.getSession();
           this.user = session?.user ?? null;
@@ -1257,6 +1254,9 @@
           });
         },
       };
+      // Expose immediately so onclick handlers work before init() is called
+      window.__app = _component;
+      return _component;
     }
   </script>
 </body>
