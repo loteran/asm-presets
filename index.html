@@ -431,6 +431,17 @@
     }
     .copy-link-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
     .copy-link-btn.copied { color: #22c55e; border-color: #22c55e; }
+    .btn-delete {
+      background: transparent;
+      color: #f87171;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      width: 100%;
+      border: 1px dashed rgba(248, 113, 113, 0.4);
+      font-weight: 400;
+      margin-top: 0.2rem;
+    }
+    .btn-delete:hover { background: rgba(220, 38, 38, 0.12); border-color: #f87171; }
 
     /* =====================================================
        EMPTY / LOADING STATES
@@ -817,7 +828,7 @@
                 <span x-text="preset.vote_count"></span>
               </button>
 
-              <!-- Import button + copy fallback -->
+              <!-- Import button + copy fallback + owner delete -->
               <div class="import-wrap" style="display:flex;flex-direction:column;gap:0.3rem;">
                 <button class="btn-import" @click="importPreset(preset)">
                   Import in ASM
@@ -827,6 +838,13 @@
                   :class="{ copied: copiedId === preset.id }"
                   @click="copyLink(preset)"
                   x-text="copiedId === preset.id ? '✓ Copied!' : 'Copy link'"
+                ></button>
+                <button
+                  x-show="user && user.id === preset.author_id"
+                  class="btn-delete"
+                  @click="deletePreset(preset)"
+                  x-text="deletingId === preset.id ? 'Deleting…' : '🗑 Delete'"
+                  :disabled="deletingId === preset.id"
                 ></button>
               </div>
             </div>
@@ -1008,6 +1026,9 @@
         // ── Votes
         myVotes: new Set(),
 
+        // ── Delete
+        deletingId: null,
+
         // ── Submit form
         form: { name: '', game: '', channel: 'Game', device: '', link: '', error: '' },
         submitting: false,
@@ -1178,6 +1199,20 @@
           }
           this.copiedId = preset.id;
           setTimeout(() => { this.copiedId = null; }, 2000);
+        },
+
+        async deletePreset(preset) {
+          if (!confirm(`Delete "${preset.name}"? This cannot be undone.`)) return;
+          this.deletingId = preset.id;
+          const { error } = await supabase
+            .from('presets')
+            .delete()
+            .eq('id', preset.id)
+            .eq('author_id', this.user.id);
+          this.deletingId = null;
+          if (!error) {
+            this.presets = this.presets.filter(p => p.id !== preset.id);
+          }
         },
 
         formatDate(d) {
