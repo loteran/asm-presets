@@ -664,8 +664,8 @@
       <span class="tagline">Community EQ presets for Arctis Sound Manager</span>
 
       <div class="header-actions">
-        <!-- DEBUG: pure HTML, no Alpine -->
-        <button onclick="alert('JS OK — v' + new Date().toISOString())" style="background:#c00;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;">JS?</button>
+        <!-- DEBUG -->
+        <button onclick="alert('Alpine=' + (typeof window.Alpine) + ' | app=' + (typeof window.__app) + ' | supabase=' + (typeof window.supabase))" style="background:#c00;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;">Debug</button>
 
         <button class="btn-ghost" @click="mode = 'submit'">
           + Share Preset
