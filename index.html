@@ -1102,16 +1102,22 @@
 
         // ──────────────────────────────────────────────────────
         async loginWithGitHub() {
-          // Persist form before redirect (with timestamp to avoid stale restores)
           localStorage.setItem('asm_pending_form', JSON.stringify({
             link: this.form.link, name: this.form.name,
             game: this.form.game, channel: this.form.channel,
             device: this.form.device, _ts: Date.now(),
           }));
-          await supabase.auth.signInWithOAuth({
+          const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'github',
             options: { redirectTo: SITE_URL },
           });
+          if (error) {
+            alert('OAuth error: ' + error.message);
+          } else if (data?.url) {
+            window.location.href = data.url;
+          } else {
+            alert('No redirect URL returned from Supabase. GitHub OAuth may not be configured.');
+          }
         },
 
         async logout() {
