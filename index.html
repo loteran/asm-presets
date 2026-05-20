@@ -1000,7 +1000,12 @@
     // ============================================================
     // Supabase client
     // ============================================================
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        flowType: 'implicit',   // tokens in hash fragment — no second redirect that would erase ?submit=1&data=…
+        persistSession: true,
+      },
+    });
 
     // ============================================================
     // Alpine app
@@ -1039,14 +1044,26 @@
 
         // ──────────────────────────────────────────────────────
         async init() {
-          // Restore session
+          // Restore session (implicit flow puts tokens in hash; getSession() picks them up)
           const { data: { session } } = await supabase.auth.getSession();
           this.user = session?.user ?? null;
 
-          // Listen for auth changes (OAuth redirect)
-          supabase.auth.onAuthStateChange((_, session) => {
+          // Listen for auth changes (OAuth implicit redirect fires SIGNED_IN here)
+          supabase.auth.onAuthStateChange((event, session) => {
             this.user = session?.user ?? null;
-            if (this.user) this.loadMyVotes();
+            if (this.user) {
+              this.loadMyVotes();
+              // After login, restore a pending submit form saved before redirect
+              const saved = localStorage.getItem('asm_pending_form');
+              if (saved) {
+                try {
+                  const f = JSON.parse(saved);
+                  Object.assign(this.form, f);
+                  this.mode = 'submit';
+                } catch (_) {}
+                localStorage.removeItem('asm_pending_form');
+              }
+            }
           });
 
           // Read URL params
@@ -1092,10 +1109,17 @@
 
         // ──────────────────────────────────────────────────────
         async loginWithGitHub() {
-          // Redirect back to the current URL (preserves ?submit=1&data=… params)
+          // Persist form before redirect so it survives the OAuth round-trip
+          if (this.mode === 'submit' && this.form.link) {
+            localStorage.setItem('asm_pending_form', JSON.stringify({
+              link: this.form.link, name: this.form.name,
+              game: this.form.game, channel: this.form.channel,
+              device: this.form.device,
+            }));
+          }
           await supabase.auth.signInWithOAuth({
             provider: 'github',
-            options: { redirectTo: window.location.href },
+            options: { redirectTo: SITE_URL },
           });
         },
 
