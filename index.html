@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASM Presets — Community Preset Sharing</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    /* =====================================================
+       DESIGN TOKENS
+       ===================================================== */
+    :root {
+      --bg-main:    #16191E;
+      --bg-card:    #1C2026;
+      --bg-button:  #2D363E;
+      --accent:     #FB4A00;
+      --accent-dim: #c23a00;
+      --text-primary:   #C8C8C8;
+      --text-secondary: #8D96AA;
+      --border:     #2A3038;
+
+      --ch-game:  #3b82f6;
+      --ch-chat:  #22c55e;
+      --ch-mic:   #eab308;
+      --ch-media: #a855f7;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    /* =====================================================
+       RESET / BASE
+       ===================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    input, select, textarea {
+      font-family: inherit;
+      font-size: 0.9rem;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    select option { background: var(--bg-card); }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+    }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* =====================================================
+       LAYOUT
+       ===================================================== */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(22, 25, 30, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      height: 60px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .brand-icon {
+      width: 30px;
+      height: 30px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .brand-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .brand-text span { color: var(--accent); }
+
+    .tagline {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-left: 0.25rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .btn-ghost {
+      background: var(--bg-button);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn-ghost:hover { background: #3a444d; }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-accent:hover { background: var(--accent-dim); }
+
+    .btn-import {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.85rem;
+      width: 100%;
+    }
+    .btn-import:hover { background: var(--accent-dim); }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border);
+    }
+
+    .avatar-fallback {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-button);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .main-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 4rem;
+    }
+
+    /* =====================================================
+       FILTER BAR
+       ===================================================== */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+
+    .filter-bar .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .filter-bar .search-wrap svg {
+      position: absolute;
+      left: 0.65rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: var(--text-secondary);
+      pointer-events: none;
+    }
+
+    .filter-bar .search-wrap input {
+      padding-left: 2rem;
+    }
+
+    .filter-bar select,
+    .filter-bar .device-input {
+      flex: 0 1 160px;
+      min-width: 120px;
+    }
+
+    .filter-bar .sort-wrap {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .sort-btn {
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border-radius: 0;
+      border: none;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .sort-btn.active {
+      background: var(--bg-button);
+      color: var(--text-primary);
+    }
+    .sort-btn:hover:not(.active) { background: #222830; }
+
+    .result-count {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      flex-basis: 100%;
+    }
+
+    /* =====================================================
+       PRESET GRID
+       ===================================================== */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .preset-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.1rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .preset-card:hover {
+      border-color: rgba(251, 74, 0, 0.35);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    /* left accent stripe on official presets */
+    .preset-card.official::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .card-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .card-badges {
+      display: flex;
+      gap: 0.35rem;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-channel { color: #fff; }
+
+    .badge-new {
+      background: rgba(251, 74, 0, 0.2);
+      color: var(--accent);
+      border: 1px solid rgba(251, 74, 0, 0.4);
+    }
+
+    .badge-official {
+      background: rgba(251, 74, 0, 0.15);
+      color: #ffa270;
+      border: 1px solid rgba(251, 74, 0, 0.3);
+    }
+
+    .card-game {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .card-device {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .card-author {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .card-author img, .card-author .avatar-fallback {
+      width: 20px;
+      height: 20px;
+      font-size: 0.65rem;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .vote-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--bg-button);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.75rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .vote-btn:hover { background: #3a444d; color: var(--text-primary); }
+    .vote-btn.voted {
+      background: rgba(251, 74, 0, 0.15);
+      color: var(--accent);
+      border-color: rgba(251, 74, 0, 0.4);
+    }
+    .vote-btn.voted:hover { background: rgba(251, 74, 0, 0.25); }
+
+    .vote-icon {
+      font-size: 0.9rem;
+      line-height: 1;
+      transition: transform 0.15s;
+    }
+    .vote-btn:hover .vote-icon { transform: scale(1.15); }
+
+    .import-wrap {
+      flex: 1;
+    }
+
+    /* =====================================================
+       COPY FALLBACK
+       ===================================================== */
+    .copy-link-btn {
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      margin-top: 0.3rem;
+      width: 100%;
+      border: 1px dashed var(--border);
+      font-weight: 400;
+    }
+    .copy-link-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+    .copy-link-btn.copied { color: #22c55e; border-color: #22c55e; }
+
+    /* =====================================================
+       EMPTY / LOADING STATES
+       ===================================================== */
+    .state-center {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    /* =====================================================
+       SUBMIT FORM
+       ===================================================== */
+    .submit-section {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .submit-section h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .submit-section .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .link-preview {
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      word-break: break-all;
+      font-family: monospace;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .btn-submit {
+      flex: 1;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.65rem 1rem;
+      font-size: 0.9rem;
+    }
+    .btn-submit:hover:not(:disabled) { background: var(--accent-dim); }
+
+    .btn-cancel {
+      background: var(--bg-button);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      padding: 0.65rem 1rem;
+      font-size: 0.9rem;
+    }
+    .btn-cancel:hover { color: var(--text-primary); background: #3a444d; }
+
+    .login-prompt {
+      background: rgba(251, 74, 0, 0.08);
+      border: 1px solid rgba(251, 74, 0, 0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .login-prompt svg { flex-shrink: 0; color: var(--accent); }
+
+    .success-box {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      text-align: center;
+      color: #22c55e;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    /* =====================================================
+       NAV TABS  (browse / submit toggle when no URL param)
+       ===================================================== */
+    .mode-tabs {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      width: fit-content;
+    }
+
+    .mode-tab {
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border-radius: 0;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.875rem;
+    }
+    .mode-tab.active {
+      background: var(--bg-button);
+      color: var(--text-primary);
+    }
+    .mode-tab:hover:not(.active) { background: #1e262e; }
+
+    /* =====================================================
+       FOOTER
+       ===================================================== */
+    .site-footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+    .site-footer a { color: var(--text-secondary); }
+    .site-footer a:hover { color: var(--text-primary); text-decoration: none; }
+
+    /* =====================================================
+       RESPONSIVE
+       ===================================================== */
+    @media (max-width: 640px) {
+      .tagline { display: none; }
+      .presets-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .filter-bar .device-input,
+      .filter-bar select { flex-basis: 100%; }
+    }
+
+    @media (max-width: 420px) {
+      .header-inner { padding: 0; }
+      .main-content { padding: 1rem 1rem 3rem; }
+    }
+  </style>
+</head>
+<body x-data="app()" x-init="init()">
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+  <header class="site-header">
+    <div class="header-inner">
+
+      <a class="brand" href="." @click.prevent="mode = 'browse'">
+        <div class="brand-icon">A</div>
+        <span class="brand-text"><span>ASM</span> Presets</span>
+      </a>
+
+      <span class="tagline">Community EQ presets for Arctis Sound Manager</span>
+
+      <div class="header-actions">
+        <template x-if="mode === 'browse' && !$el.closest('[x-data]').getAttribute('x-data')?.includes('submit')">
+          <!-- always show submit button in browse mode -->
+        </template>
+
+        <button class="btn-ghost" @click="mode = (mode === 'submit' ? 'browse' : 'submit')" x-show="mode === 'browse'">
+          + Share Preset
+        </button>
+
+        <!-- Logged in -->
+        <template x-if="user">
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <template x-if="user.user_metadata?.avatar_url">
+              <img :src="user.user_metadata.avatar_url" :alt="user.user_metadata.user_name" class="avatar" />
+            </template>
+            <template x-if="!user.user_metadata?.avatar_url">
+              <div class="avatar-fallback">
+                <span x-text="(user.user_metadata?.user_name || 'U')[0].toUpperCase()"></span>
+              </div>
+            </template>
+            <button class="btn-ghost" @click="logout()">Sign out</button>
+          </div>
+        </template>
+
+        <!-- Logged out -->
+        <template x-if="!user">
+          <button class="btn-ghost" @click="loginWithGitHub()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            Sign in with GitHub
+          </button>
+        </template>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+  <main class="main-content">
+
+    <!-- Mode tabs (only show when not launched from ?submit=1) -->
+    <template x-if="!new URLSearchParams(window.location.search).get('submit')">
+      <div class="mode-tabs">
+        <button class="mode-tab" :class="{ active: mode === 'browse' }" @click="mode = 'browse'">Browse</button>
+        <button class="mode-tab" :class="{ active: mode === 'submit' }" @click="mode = 'submit'">Share a Preset</button>
+      </div>
+    </template>
+
+    <!-- ========================================================
+         BROWSE MODE
+         ======================================================== -->
+    <div x-show="mode === 'browse'">
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Search presets…"
+            x-model.debounce.400ms="search"
+            @input="loadPresets()"
+          />
+        </div>
+
+        <select x-model="filterChannel" @change="loadPresets()">
+          <option value="">All channels</option>
+          <option value="Game">Game</option>
+          <option value="Chat">Chat</option>
+          <option value="Mic">Mic</option>
+          <option value="Media">Media</option>
+        </select>
+
+        <input
+          class="device-input"
+          type="text"
+          placeholder="Device filter…"
+          x-model.debounce.400ms="filterDevice"
+          @input="loadPresets()"
+        />
+
+        <div class="sort-wrap">
+          <button class="sort-btn" :class="{ active: sortBy === 'votes' }" @click="sortBy = 'votes'; loadPresets()">Top</button>
+          <button class="sort-btn" :class="{ active: sortBy === 'recent' }" @click="sortBy = 'recent'; loadPresets()">Recent</button>
+        </div>
+
+        <span class="result-count" x-show="!loading" x-text="`${presets.length} preset${presets.length !== 1 ? 's' : ''} found`"></span>
+      </div>
+
+      <!-- Loading state -->
+      <div class="state-center" x-show="loading">
+        <div class="spinner"></div>
+        <p>Loading presets…</p>
+      </div>
+
+      <!-- Empty state -->
+      <div class="state-center" x-show="!loading && presets.length === 0">
+        <div class="empty-icon">🎚️</div>
+        <p style="font-weight:600;color:var(--text-primary);margin-bottom:0.35rem;">No presets found</p>
+        <p style="font-size:0.85rem;">Be the first to share one!</p>
+      </div>
+
+      <!-- Presets grid -->
+      <div class="presets-grid" x-show="!loading && presets.length > 0">
+        <template x-for="preset in presets" :key="preset.id">
+          <div class="preset-card" :class="{ official: preset.official }">
+
+            <div class="card-header">
+              <div class="card-name" x-text="preset.name"></div>
+              <div class="card-badges">
+                <!-- Official badge -->
+                <template x-if="preset.official">
+                  <span class="badge badge-official">⭐ Official</span>
+                </template>
+                <!-- New badge: within last 7 days -->
+                <template x-if="isNew(preset.created_at)">
+                  <span class="badge badge-new">NEW</span>
+                </template>
+                <!-- Channel badge -->
+                <span
+                  class="badge badge-channel"
+                  :style="`background: ${channelColor(preset.channel)}22; color: ${channelColor(preset.channel)}; border: 1px solid ${channelColor(preset.channel)}55;`"
+                  x-text="preset.channel"
+                ></span>
+              </div>
+            </div>
+
+            <div class="card-game" x-show="preset.game" x-text="preset.game"></div>
+
+            <div class="card-device" x-show="preset.device">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+              </svg>
+              <span x-text="preset.device"></span>
+            </div>
+
+            <div class="card-author">
+              <template x-if="preset.author_avatar">
+                <img :src="preset.author_avatar" :alt="preset.author_name" class="avatar" />
+              </template>
+              <template x-if="!preset.author_avatar">
+                <div class="avatar-fallback">
+                  <span x-text="(preset.author_name || 'A')[0].toUpperCase()"></span>
+                </div>
+              </template>
+              <span x-text="preset.author_name"></span>
+              <span style="margin-left:auto;font-size:0.72rem;" x-text="formatDate(preset.created_at)"></span>
+            </div>
+
+            <div class="card-footer">
+              <!-- Vote button -->
+              <button
+                class="vote-btn"
+                :class="{ voted: hasVoted(preset) }"
+                @click="toggleVote(preset)"
+                :title="hasVoted(preset) ? 'Remove vote' : 'Upvote this preset'"
+              >
+                <span class="vote-icon" x-text="hasVoted(preset) ? '♥' : '♡'"></span>
+                <span x-text="preset.vote_count"></span>
+              </button>
+
+              <!-- Import button + copy fallback -->
+              <div class="import-wrap" style="display:flex;flex-direction:column;gap:0.3rem;">
+                <button class="btn-import" @click="importPreset(preset)">
+                  Import in ASM
+                </button>
+                <button
+                  class="copy-link-btn"
+                  :class="{ copied: copiedId === preset.id }"
+                  @click="copyLink(preset)"
+                  x-text="copiedId === preset.id ? '✓ Copied!' : 'Copy link'"
+                ></button>
+              </div>
+            </div>
+
+          </div>
+        </template>
+      </div>
+
+    </div><!-- /browse -->
+
+
+    <!-- ========================================================
+         SUBMIT MODE
+         ======================================================== -->
+    <div x-show="mode === 'submit'" class="submit-section">
+
+      <h2>Share a Preset</h2>
+      <p class="subtitle">Submit your EQ preset to the community. It will be visible to all ASM users.</p>
+
+      <!-- Success state -->
+      <template x-if="submitted">
+        <div class="success-box">
+          ✓ Preset submitted! Redirecting to browse…
+        </div>
+      </template>
+
+      <!-- Form -->
+      <template x-if="!submitted">
+        <div class="form-card">
+
+          <!-- Login prompt if not authenticated -->
+          <template x-if="!user">
+            <div class="login-prompt">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>You need to <a href="#" @click.prevent="loginWithGitHub()">sign in with GitHub</a> to submit a preset.</span>
+            </div>
+          </template>
+
+          <!-- Preset name -->
+          <div class="form-group">
+            <label class="form-label">Preset name *</label>
+            <input
+              type="text"
+              x-model="form.name"
+              placeholder="e.g. Bass Boost for FPS"
+              :disabled="!user"
+            />
+          </div>
+
+          <!-- Game name + Channel -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Game / App name</label>
+              <input
+                type="text"
+                x-model="form.game"
+                placeholder="e.g. Apex Legends"
+                :disabled="!user"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Channel *</label>
+              <select x-model="form.channel" :disabled="!user">
+                <option value="Game">Game</option>
+                <option value="Chat">Chat</option>
+                <option value="Mic">Mic</option>
+                <option value="Media">Media</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Device name -->
+          <div class="form-group">
+            <label class="form-label">Device name</label>
+            <input
+              type="text"
+              x-model="form.device"
+              placeholder="e.g. Arctis Nova Pro Wireless"
+              :disabled="!user"
+            />
+          </div>
+
+          <!-- Link preview -->
+          <div class="form-group">
+            <label class="form-label">Preset data link</label>
+            <template x-if="form.link">
+              <div class="link-preview" x-text="form.link"></div>
+            </template>
+            <template x-if="!form.link">
+              <input
+                type="text"
+                x-model="form.link"
+                placeholder="arctis-asm://import?data=…"
+                :disabled="!user"
+              />
+            </template>
+            <span style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.25rem;">
+              This link is generated by ASM when you click "Share" on a preset.
+            </span>
+          </div>
+
+          <!-- Actions -->
+          <div class="form-actions">
+            <button
+              class="btn-cancel"
+              @click="mode = 'browse'; window.history.replaceState({}, '', window.location.pathname)"
+            >Cancel</button>
+            <button
+              class="btn-submit"
+              @click="submitPreset()"
+              :disabled="!user || submitting || !form.name.trim() || !form.link.trim()"
+            >
+              <span x-show="!submitting">Submit Preset</span>
+              <span x-show="submitting">Submitting…</span>
+            </button>
+          </div>
+
+        </div>
+      </template>
+
+    </div><!-- /submit -->
+
+  </main>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="site-footer">
+    <p>
+      <a href="https://github.com/loteran/asm-presets" target="_blank" rel="noopener">GitHub</a>
+      &nbsp;·&nbsp;
+      Built for <a href="https://github.com/loteran/Arctis-Sound-Manager" target="_blank" rel="noopener">Arctis Sound Manager</a>
+      &nbsp;·&nbsp;
+      Community-maintained
+    </p>
+  </footer>
+
+  <!-- ============================================================
+       ALPINE.JS APP
+       ============================================================ -->
+  <script>
+    // ============================================================
+    // CONFIGURATION — replace these before deploying
+    // ============================================================
+    const SUPABASE_URL     = 'https://YOUR_PROJECT.supabase.co';
+    const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+    const SITE_URL          = 'https://loteran.github.io/asm-presets/';
+
+    // ============================================================
+    // Supabase client
+    // ============================================================
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ============================================================
+    // Alpine app
+    // ============================================================
+    function app() {
+      return {
+        // ── Auth
+        user: null,
+
+        // ── Data
+        presets: [],
+        loading: true,
+
+        // ── Navigation
+        mode: 'browse',   // 'browse' | 'submit'
+
+        // ── Filters
+        search: '',
+        filterChannel: '',
+        filterDevice: '',
+        sortBy: 'votes',   // 'votes' | 'recent'
+
+        // ── Votes
+        myVotes: new Set(),
+
+        // ── Submit form
+        form: { name: '', game: '', channel: 'Game', device: '', link: '' },
+        submitting: false,
+        submitted: false,
+
+        // ── UI state
+        copiedId: null,
+
+        // ──────────────────────────────────────────────────────
+        async init() {
+          // Restore session
+          const { data: { session } } = await supabase.auth.getSession();
+          this.user = session?.user ?? null;
+
+          // Listen for auth changes (OAuth redirect)
+          supabase.auth.onAuthStateChange((_, session) => {
+            this.user = session?.user ?? null;
+            if (this.user) this.loadMyVotes();
+          });
+
+          // Read URL params
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('submit') === '1') {
+            this.mode = 'submit';
+            this.form.link    = params.get('data')    || '';
+            this.form.name    = params.get('name')    || '';
+            this.form.channel = params.get('channel') || 'Game';
+            this.form.device  = params.get('device')  || '';
+            this.form.game    = params.get('game')    || this.form.name;
+          }
+
+          if (this.user) await this.loadMyVotes();
+          await this.loadPresets();
+        },
+
+        // ──────────────────────────────────────────────────────
+        async loadMyVotes() {
+          if (!this.user) return;
+          const { data } = await supabase
+            .from('votes')
+            .select('preset_id')
+            .eq('user_id', this.user.id);
+          this.myVotes = new Set((data || []).map(v => v.preset_id));
+        },
+
+        // ──────────────────────────────────────────────────────
+        async loadPresets() {
+          this.loading = true;
+          let query = supabase.from('presets').select('*');
+          if (this.search)       query = query.ilike('name',   `%${this.search}%`);
+          if (this.filterChannel) query = query.eq('channel',  this.filterChannel);
+          if (this.filterDevice)  query = query.ilike('device', `%${this.filterDevice}%`);
+          if (this.sortBy === 'votes')
+            query = query.order('vote_count', { ascending: false });
+          else
+            query = query.order('created_at', { ascending: false });
+          const { data } = await query.limit(60);
+          this.presets = data || [];
+          this.loading = false;
+        },
+
+        // ──────────────────────────────────────────────────────
+        async loginWithGitHub() {
+          await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: { redirectTo: SITE_URL },
+          });
+        },
+
+        async logout() {
+          await supabase.auth.signOut();
+        },
+
+        // ──────────────────────────────────────────────────────
+        hasVoted(preset) {
+          return this.myVotes.has(preset.id);
+        },
+
+        async toggleVote(preset) {
+          if (!this.user) { this.loginWithGitHub(); return; }
+          const { data, error } = await supabase.rpc('toggle_vote', { p_preset_id: preset.id });
+          if (!error && data) {
+            preset.vote_count = data.vote_count;
+            if (data.voted) this.myVotes.add(preset.id);
+            else            this.myVotes.delete(preset.id);
+          }
+        },
+
+        // ──────────────────────────────────────────────────────
+        channelColor(channel) {
+          const colors = {
+            Game:  '#3b82f6',
+            Chat:  '#22c55e',
+            Mic:   '#eab308',
+            Media: '#a855f7',
+          };
+          return colors[channel] || '#8D96AA';
+        },
+
+        isNew(createdAt) {
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          return new Date(createdAt).getTime() > sevenDaysAgo;
+        },
+
+        // ──────────────────────────────────────────────────────
+        async submitPreset() {
+          if (!this.user) { this.loginWithGitHub(); return; }
+          this.submitting = true;
+
+          // Try to decode the data payload from the deep link
+          let decodedData = {};
+          try {
+            const url    = new URL(this.form.link);
+            const b64    = url.searchParams.get('data') || '';
+            const padded = b64.replace(/-/g, '+').replace(/_/g, '/');
+            const pad    = '=='.slice((padded.length + 3) % 4);
+            decodedData  = JSON.parse(atob(padded + pad));
+          } catch (_) {
+            // link might not be a standard arctis-asm:// deep link — store as-is
+          }
+
+          const { error } = await supabase.from('presets').insert({
+            name:          this.form.name.trim(),
+            game:          (this.form.game || this.form.name).trim(),
+            channel:       this.form.channel,
+            device:        this.form.device.trim(),
+            data:          decodedData,
+            link:          this.form.link.trim(),
+            author_id:     this.user.id,
+            author_name:   this.user.user_metadata?.user_name   || 'Anonymous',
+            author_avatar: this.user.user_metadata?.avatar_url  || '',
+          });
+
+          this.submitting = false;
+          if (!error) {
+            this.submitted = true;
+            setTimeout(() => {
+              this.submitted = false;
+              this.mode = 'browse';
+              window.history.replaceState({}, '', window.location.pathname);
+              this.loadPresets();
+            }, 2000);
+          }
+        },
+
+        // ──────────────────────────────────────────────────────
+        importPreset(preset) {
+          window.location.href = preset.link;
+        },
+
+        async copyLink(preset) {
+          try {
+            await navigator.clipboard.writeText(preset.link);
+          } catch (_) {
+            // fallback for older browsers
+            const ta = document.createElement('textarea');
+            ta.value = preset.link;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          this.copiedId = preset.id;
+          setTimeout(() => { this.copiedId = null; }, 2000);
+        },
+
+        formatDate(d) {
+          return new Date(d).toLocaleDateString(undefined, {
+            year:  'numeric',
+            month: 'short',
+            day:   'numeric',
+          });
+        },
+      };
+    }
+  </script>
+</body>
+</html>
