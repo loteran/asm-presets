@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASM Presets — Community Preset Sharing</title>
-  <!-- Alpine moved to end of body so window.app is defined first -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     /* =====================================================
@@ -664,20 +663,31 @@
       <span class="tagline">Community EQ presets for Arctis Sound Manager</span>
 
       <div class="header-actions">
-        <!-- DEBUG -->
-        <button onclick="alert('step=' + window.__step + '\nAlpine=' + (typeof window.Alpine) + '\napp=' + (typeof window.app) + '\n__app=' + (typeof window.__app))" style="background:#c00;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;">Debug</button>
 
         <button class="btn-ghost" @click="mode = 'submit'">
           + Share Preset
         </button>
 
-        <!-- Single auth button — onclick natif, contourne Alpine @click -->
-        <button class="btn-ghost" onclick="window.__app ? (window.__app.user ? window.__app.logout() : window.__app.loginWithGitHub()) : alert('App not ready, retry in 1s')">
+        <!-- Auth button — shown when not logged in -->
+        <button class="btn-ghost" x-show="!user" @click="loginWithGitHub()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
           </svg>
           Sign in with GitHub
         </button>
+
+        <!-- User avatar + logout — shown when logged in -->
+        <div x-show="user" style="display:flex;align-items:center;gap:0.5rem;">
+          <img
+            x-show="user?.user_metadata?.avatar_url"
+            :src="user?.user_metadata?.avatar_url"
+            :alt="user?.user_metadata?.user_name"
+            class="avatar"
+          />
+          <span style="font-size:0.82rem;color:var(--text-secondary);" x-text="user?.user_metadata?.user_name || user?.email"></span>
+          <button class="btn-ghost" @click="logout()" style="font-size:0.8rem;padding:0.35rem 0.7rem;">Sign out</button>
+        </div>
+
       </div>
     </div>
   </header>
@@ -976,295 +986,8 @@
     </p>
   </footer>
 
-  <!-- ============================================================
-       ALPINE.JS APP
-       ============================================================ -->
-  <script>
-    // ============================================================
-    // CONFIGURATION — replace these before deploying
-    // ============================================================
-    window.__step = 'constants';
-    const SUPABASE_URL     = 'https://pdvfjlxlsltsozmqsxek.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkdmZqbHhsc2x0c296bXFzeGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODk5NTMsImV4cCI6MjA5NDg2NTk1M30.JRoXwQY5xPl1SM86fKcEm0D06hFa1QsNSmZkdBN7K5U';
-    const SITE_URL          = 'https://loteran.github.io/asm-presets/';
-
-    window.__step = 'supabase-init';
-    let supabase;
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { persistSession: true },
-      });
-      window.__step = 'supabase-ok';
-    } catch(e) {
-      window.__step = 'supabase-ERROR: ' + e.message;
-    }
-
-    // ============================================================
-    // Alpine app — registered via alpine:init (official v3 pattern)
-    // ============================================================
-    function _appFactory() {
-      const _component = {
-        // ── Auth
-        user: null,
-
-        // ── Data
-        presets: [],
-        loading: true,
-
-        // ── Navigation
-        mode: 'browse',   // 'browse' | 'submit'
-
-        // ── Filters
-        search: '',
-        filterChannel: '',
-        filterDevice: '',
-        sortBy: 'votes',   // 'votes' | 'recent'
-
-        // ── Votes
-        myVotes: new Set(),
-
-        // ── Delete
-        deletingId: null,
-
-        // ── Submit form
-        form: { name: '', game: '', channel: 'Game', device: '', link: '', error: '' },
-        submitting: false,
-        submitted: false,
-
-        // ── UI state
-        copiedId: null,
-
-        // ──────────────────────────────────────────────────────
-        async init() {
-          // Restore session (implicit flow puts tokens in hash; getSession() picks them up)
-          const { data: { session } } = await supabase.auth.getSession();
-          this.user = session?.user ?? null;
-
-          // Listen for auth changes (OAuth implicit redirect fires SIGNED_IN here)
-          supabase.auth.onAuthStateChange((event, session) => {
-            this.user = session?.user ?? null;
-            if (this.user) this.loadMyVotes();
-            if (event === 'SIGNED_IN') this._restorePendingForm();
-          });
-
-          // Read URL params for submit mode
-          const params = new URLSearchParams(window.location.search);
-          if (params.get('submit') === '1') {
-            this.mode = 'submit';
-            this.form.link    = params.get('data')    || '';
-            this.form.name    = params.get('name')    || '';
-            this.form.channel = params.get('channel') || 'Game';
-            this.form.device  = params.get('device')  || '';
-            this.form.game    = params.get('game')    || this.form.name;
-          } else {
-            // No URL params: might be returning from OAuth — try localStorage
-            this._restorePendingForm();
-          }
-
-          if (this.user) await this.loadMyVotes();
-          await this.loadPresets();
-        },
-
-        _restorePendingForm() {
-          const saved = localStorage.getItem('asm_pending_form');
-          if (!saved) return;
-          try {
-            const f = JSON.parse(saved);
-            if (Date.now() - (f._ts || 0) < 10 * 60 * 1000) {
-              delete f._ts;
-              Object.assign(this.form, f);
-              this.mode = 'submit';
-            }
-          } catch (_) {}
-          localStorage.removeItem('asm_pending_form');
-        },
-
-        // ──────────────────────────────────────────────────────
-        async loadMyVotes() {
-          if (!this.user) return;
-          const { data } = await supabase
-            .from('votes')
-            .select('preset_id')
-            .eq('user_id', this.user.id);
-          this.myVotes = new Set((data || []).map(v => v.preset_id));
-        },
-
-        // ──────────────────────────────────────────────────────
-        async loadPresets() {
-          this.loading = true;
-          let query = supabase.from('presets').select('*');
-          if (this.search)       query = query.ilike('name',   `%${this.search}%`);
-          if (this.filterChannel) query = query.eq('channel',  this.filterChannel);
-          if (this.filterDevice)  query = query.ilike('device', `%${this.filterDevice}%`);
-          if (this.sortBy === 'votes')
-            query = query.order('vote_count', { ascending: false });
-          else
-            query = query.order('created_at', { ascending: false });
-          const { data } = await query.limit(60);
-          this.presets = data || [];
-          this.loading = false;
-        },
-
-        // ──────────────────────────────────────────────────────
-        async loginWithGitHub() {
-          localStorage.setItem('asm_pending_form', JSON.stringify({
-            link: this.form.link, name: this.form.name,
-            game: this.form.game, channel: this.form.channel,
-            device: this.form.device, _ts: Date.now(),
-          }));
-          const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: { redirectTo: SITE_URL },
-          });
-          if (error) {
-            alert('OAuth error: ' + error.message);
-          } else if (data?.url) {
-            window.location.href = data.url;
-          } else {
-            alert('No redirect URL returned from Supabase. GitHub OAuth may not be configured.');
-          }
-        },
-
-        async logout() {
-          await supabase.auth.signOut();
-        },
-
-        // ──────────────────────────────────────────────────────
-        hasVoted(preset) {
-          return this.myVotes.has(preset.id);
-        },
-
-        async toggleVote(preset) {
-          if (!this.user) { this.loginWithGitHub(); return; }
-          const { data, error } = await supabase.rpc('toggle_vote', { p_preset_id: preset.id });
-          if (!error && data) {
-            preset.vote_count = data.vote_count;
-            if (data.voted) this.myVotes.add(preset.id);
-            else            this.myVotes.delete(preset.id);
-          }
-        },
-
-        // ──────────────────────────────────────────────────────
-        channelColor(channel) {
-          const colors = {
-            Game:  '#3b82f6',
-            Chat:  '#22c55e',
-            Mic:   '#eab308',
-            Media: '#a855f7',
-          };
-          return colors[channel] || '#8D96AA';
-        },
-
-        isNew(createdAt) {
-          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-          return new Date(createdAt).getTime() > sevenDaysAgo;
-        },
-
-        // ──────────────────────────────────────────────────────
-        async submitPreset() {
-          this.form.error = '';
-          if (!this.user) { this.loginWithGitHub(); return; }
-          if (!this.form.name.trim()) {
-            this.form.error = 'Please enter a preset name.'; return;
-          }
-          if (!this.form.link.trim()) {
-            this.form.error = 'No preset data. Use "Publish to community" from ASM export dialog.'; return;
-          }
-          this.submitting = true;
-
-          // Try to decode the data payload from the deep link
-          let decodedData = {};
-          try {
-            const url    = new URL(this.form.link);
-            const b64    = url.searchParams.get('data') || '';
-            const padded = b64.replace(/-/g, '+').replace(/_/g, '/');
-            const pad    = '=='.slice((padded.length + 3) % 4);
-            decodedData  = JSON.parse(atob(padded + pad));
-          } catch (_) {
-            // link might not be a standard arctis-asm:// deep link — store as-is
-          }
-
-          const { error } = await supabase.from('presets').insert({
-            name:          this.form.name.trim(),
-            game:          (this.form.game || this.form.name).trim(),
-            channel:       this.form.channel,
-            device:        this.form.device.trim(),
-            data:          decodedData,
-            link:          this.form.link.trim(),
-            author_id:     this.user.id,
-            author_name:   this.user.user_metadata?.user_name   || 'Anonymous',
-            author_avatar: this.user.user_metadata?.avatar_url  || '',
-          });
-
-          this.submitting = false;
-          if (error) {
-            this.form.error = error.message || 'Submission failed — check your connection and try again.';
-          } else {
-            this.form.error = '';
-            this.submitted = true;
-            setTimeout(() => {
-              this.submitted = false;
-              this.mode = 'browse';
-              window.history.replaceState({}, '', window.location.pathname);
-              this.loadPresets();
-            }, 2000);
-          }
-        },
-
-        // ──────────────────────────────────────────────────────
-        importPreset(preset) {
-          window.location.href = preset.link;
-        },
-
-        async copyLink(preset) {
-          try {
-            await navigator.clipboard.writeText(preset.link);
-          } catch (_) {
-            // fallback for older browsers
-            const ta = document.createElement('textarea');
-            ta.value = preset.link;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-          }
-          this.copiedId = preset.id;
-          setTimeout(() => { this.copiedId = null; }, 2000);
-        },
-
-        async deletePreset(preset) {
-          if (!confirm(`Delete "${preset.name}"? This cannot be undone.`)) return;
-          this.deletingId = preset.id;
-          const { error } = await supabase
-            .from('presets')
-            .delete()
-            .eq('id', preset.id)
-            .eq('author_id', this.user.id);
-          this.deletingId = null;
-          if (!error) {
-            this.presets = this.presets.filter(p => p.id !== preset.id);
-          }
-        },
-
-        formatDate(d) {
-          return new Date(d).toLocaleDateString(undefined, {
-            year:  'numeric',
-            month: 'short',
-            day:   'numeric',
-          });
-        },
-      };
-      window.__app = _component;
-      return _component;
-    }
-
-    // Expose as global so x-data="app()" can call it
-    window.app = _appFactory;
-  </script>
-
-  <!-- Alpine AFTER our script so window.app exists when Alpine starts -->
-  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <!-- app.js is loaded before Alpine so window.app() is available -->
+  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
 </body>
 </html>
