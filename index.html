@@ -648,7 +648,7 @@
     }
   </style>
 </head>
-<body x-data="app()" x-init="init()">
+<body x-data="app" x-init="init()">
 
   <!-- ============================================================
        HEADER
@@ -998,9 +998,9 @@
     });
 
     // ============================================================
-    // Alpine app
+    // Alpine app — registered via alpine:init (official v3 pattern)
     // ============================================================
-    function app() {
+    function _appFactory() {
       const _component = {
         // ── Auth
         user: null,
@@ -1254,10 +1254,13 @@
           });
         },
       };
-      // Expose immediately so onclick handlers work before init() is called
       window.__app = _component;
       return _component;
     }
+
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('app', _appFactory);
+    });
   </script>
 </body>
 </html>
