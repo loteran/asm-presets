@@ -416,6 +416,38 @@
     }
 
     /* =====================================================
+       THEME SWATCHES (theme cards)
+       ===================================================== */
+    .theme-swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .theme-swatch-preview {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.6rem;
+    }
+
+    .theme-swatch-preview .swatch {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* =====================================================
        COPY FALLBACK
        ===================================================== */
     .copy-link-btn {
@@ -664,7 +696,7 @@
 
       <div class="header-actions">
 
-        <button class="btn-ghost" @click="mode = 'submit'">
+        <button class="btn-ghost" @click="mode = 'submit'" x-text="contentType === 'themes' ? '+ Share Theme' : '+ Share Preset'">
           + Share Preset
         </button>
 
@@ -689,18 +721,31 @@
        ============================================================ -->
   <main class="main-content">
 
+    <!-- Content type tabs: Presets vs Themes (only show when not launched from ?submit=1) -->
+    <template x-if="!new URLSearchParams(window.location.search).get('submit')">
+      <div class="mode-tabs">
+        <button class="mode-tab" :class="{ active: contentType === 'presets' }" @click="contentType = 'presets'">🎚️ Presets</button>
+        <button class="mode-tab" :class="{ active: contentType === 'themes' }" @click="contentType = 'themes'">🎨 Themes</button>
+      </div>
+    </template>
+
     <!-- Mode tabs (only show when not launched from ?submit=1) -->
     <template x-if="!new URLSearchParams(window.location.search).get('submit')">
       <div class="mode-tabs">
         <button class="mode-tab" :class="{ active: mode === 'browse' }" @click="mode = 'browse'">Browse</button>
-        <button class="mode-tab" :class="{ active: mode === 'submit' }" @click="mode = 'submit'">Share a Preset</button>
+        <button
+          class="mode-tab"
+          :class="{ active: mode === 'submit' }"
+          @click="mode = 'submit'"
+          x-text="contentType === 'themes' ? 'Share a Theme' : 'Share a Preset'"
+        ></button>
       </div>
     </template>
 
     <!-- ========================================================
-         BROWSE MODE
+         BROWSE MODE — PRESETS
          ======================================================== -->
-    <div x-show="mode === 'browse'">
+    <div x-show="mode === 'browse' && contentType === 'presets'">
 
       <!-- Filter bar -->
       <div class="filter-bar">
@@ -837,13 +882,132 @@
         </template>
       </div>
 
-    </div><!-- /browse -->
+    </div><!-- /browse presets -->
 
 
     <!-- ========================================================
-         SUBMIT MODE
+         BROWSE MODE — THEMES
          ======================================================== -->
-    <div x-show="mode === 'submit'" class="submit-section">
+    <div x-show="mode === 'browse' && contentType === 'themes'">
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Search themes…"
+            x-model.debounce.400ms="themeSearch"
+            @input="loadThemes()"
+          />
+        </div>
+
+        <div class="sort-wrap">
+          <button class="sort-btn" :class="{ active: themeSortBy === 'votes' }" @click="themeSortBy = 'votes'; loadThemes()">Top</button>
+          <button class="sort-btn" :class="{ active: themeSortBy === 'recent' }" @click="themeSortBy = 'recent'; loadThemes()">Recent</button>
+        </div>
+
+        <span class="result-count" x-show="!themesLoading" x-text="`${themes.length} theme${themes.length !== 1 ? 's' : ''} found`"></span>
+      </div>
+
+      <!-- Loading state -->
+      <div class="state-center" x-show="themesLoading">
+        <div class="spinner"></div>
+        <p>Loading themes…</p>
+      </div>
+
+      <!-- Empty state -->
+      <div class="state-center" x-show="!themesLoading && themes.length === 0">
+        <div class="empty-icon">🎨</div>
+        <p style="font-weight:600;color:var(--text-primary);margin-bottom:0.35rem;">No themes found</p>
+        <p style="font-size:0.85rem;">Be the first to share one!</p>
+      </div>
+
+      <!-- Themes grid -->
+      <div class="presets-grid" x-show="!themesLoading && themes.length > 0">
+        <template x-for="theme in themes" :key="theme.id">
+          <div class="preset-card" :class="{ official: theme.official }">
+
+            <div class="card-header">
+              <div class="card-name" x-text="theme.name"></div>
+              <div class="card-badges">
+                <!-- Official badge -->
+                <template x-if="theme.official">
+                  <span class="badge badge-official">⭐ Official</span>
+                </template>
+                <!-- New badge: within last 7 days -->
+                <template x-if="isNew(theme.created_at)">
+                  <span class="badge badge-new">NEW</span>
+                </template>
+              </div>
+            </div>
+
+            <!-- Color swatch preview -->
+            <div class="theme-swatches">
+              <template x-for="hex in themeSwatches(theme)" :key="hex + Math.random()">
+                <div class="swatch" :style="`background:${hex}`" :title="hex"></div>
+              </template>
+            </div>
+
+            <div class="card-author">
+              <template x-if="theme.author_avatar">
+                <img :src="theme.author_avatar" :alt="theme.author_name" class="avatar" />
+              </template>
+              <template x-if="!theme.author_avatar">
+                <div class="avatar-fallback">
+                  <span x-text="(theme.author_name || 'A')[0].toUpperCase()"></span>
+                </div>
+              </template>
+              <span x-text="theme.author_name"></span>
+              <span style="margin-left:auto;font-size:0.72rem;" x-text="formatDate(theme.created_at)"></span>
+            </div>
+
+            <div class="card-footer">
+              <!-- Vote button -->
+              <button
+                class="vote-btn"
+                :class="{ voted: hasVotedTheme(theme) }"
+                @click="toggleThemeVote(theme)"
+                :title="hasVotedTheme(theme) ? 'Remove vote' : 'Upvote this theme'"
+              >
+                <span class="vote-icon" x-text="hasVotedTheme(theme) ? '♥' : '♡'"></span>
+                <span x-text="theme.vote_count"></span>
+              </button>
+
+              <!-- Import button + copy fallback + owner delete -->
+              <div class="import-wrap" style="display:flex;flex-direction:column;gap:0.3rem;">
+                <button class="btn-import" @click="importTheme(theme)">
+                  Import in ASM
+                </button>
+                <button
+                  class="copy-link-btn"
+                  :class="{ copied: copiedThemeId === theme.id }"
+                  @click="copyThemeLink(theme)"
+                  x-text="copiedThemeId === theme.id ? '✓ Copied!' : 'Copy link'"
+                ></button>
+                <button
+                  x-show="user && user.id === theme.author_id"
+                  class="btn-delete"
+                  @click="deleteTheme(theme)"
+                  x-text="deletingThemeId === theme.id ? 'Deleting…' : '🗑 Delete'"
+                  :disabled="deletingThemeId === theme.id"
+                ></button>
+              </div>
+            </div>
+
+          </div>
+        </template>
+      </div>
+
+    </div><!-- /browse themes -->
+
+
+    <!-- ========================================================
+         SUBMIT MODE — PRESET
+         ======================================================== -->
+    <div x-show="mode === 'submit' && contentType === 'presets'" class="submit-section">
 
       <h2>Share a Preset</h2>
       <p class="subtitle">Submit your EQ preset to the community. It will be visible to all ASM users.</p>
@@ -961,7 +1125,110 @@
         </div>
       </template>
 
-    </div><!-- /submit -->
+    </div><!-- /submit preset -->
+
+
+    <!-- ========================================================
+         SUBMIT MODE — THEME
+         ======================================================== -->
+    <div x-show="mode === 'submit' && contentType === 'themes'" class="submit-section">
+
+      <h2>Share a Theme</h2>
+      <p class="subtitle">Submit your ASM color theme to the community. It will be visible to all ASM users.</p>
+
+      <!-- Success state -->
+      <template x-if="themeSubmitted">
+        <div class="success-box">
+          ✓ Theme submitted! Redirecting to browse…
+        </div>
+      </template>
+
+      <!-- Form -->
+      <template x-if="!themeSubmitted">
+        <div class="form-card">
+
+          <!-- Login prompt if not authenticated -->
+          <template x-if="!user">
+            <div class="login-prompt">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>You need to <a href="#" @click.prevent="loginWithGitHub()">sign in with GitHub</a> to submit a theme.</span>
+            </div>
+          </template>
+
+          <!-- Theme name -->
+          <div class="form-group">
+            <label class="form-label">Theme name *</label>
+            <input
+              type="text"
+              x-model="themeForm.name"
+              placeholder="e.g. Midnight Orange"
+              :disabled="!user"
+            />
+          </div>
+
+          <!-- Color preview (decoded from the link) -->
+          <template x-if="themeForm.link && decodeThemeLink(themeForm.link)">
+            <div class="form-group">
+              <label class="form-label">Color preview</label>
+              <div class="theme-swatches theme-swatch-preview">
+                <template x-for="hex in themeSwatchesFromColors(decodeThemeLink(themeForm.link))" :key="hex + Math.random()">
+                  <div class="swatch" :style="`background:${hex}`" :title="hex"></div>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- Link preview -->
+          <div class="form-group">
+            <label class="form-label">Theme data link</label>
+            <template x-if="themeForm.link">
+              <div class="link-preview" x-text="themeForm.link"></div>
+            </template>
+            <template x-if="!themeForm.link">
+              <input
+                type="text"
+                x-model="themeForm.link"
+                placeholder="arctis-asm://import-theme?data=…"
+                :disabled="!user"
+              />
+            </template>
+            <span style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.25rem;">
+              This link is generated by ASM when you click "Share" on a theme.
+            </span>
+          </div>
+
+          <!-- Debug state (always visible in submit mode) -->
+          <div style="font-size:0.72rem;color:var(--text-secondary);background:var(--bg-button);border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:0.5rem;">
+            <span x-text="user ? '✓ Connected as ' + (user.user_metadata?.user_name || user.email) : '✗ Not connected'"></span>
+            &nbsp;·&nbsp;
+            <span x-text="themeForm.link ? 'Link OK (' + themeForm.link.length + ' chars)' : '⚠ Link empty'"></span>
+          </div>
+
+          <!-- Error display -->
+          <div x-show="themeForm.error" class="submit-error" x-text="themeForm.error"></div>
+
+          <div class="form-actions">
+            <button
+              class="btn-cancel"
+              @click="mode = 'browse'; window.history.replaceState({}, '', window.location.pathname)"
+            >Cancel</button>
+            <button
+              class="btn-submit"
+              @click="submitTheme()"
+              :disabled="themeSubmitting"
+            >
+              <span x-show="!themeSubmitting && !user">Sign in &amp; Publish</span>
+              <span x-show="!themeSubmitting && user">Submit Theme</span>
+              <span x-show="themeSubmitting">Submitting…</span>
+            </button>
+          </div>
+
+        </div>
+      </template>
+
+    </div><!-- /submit theme -->
 
   </main>
 

@@ -1,8 +1,8 @@
 # ASM Presets
 
-Community preset sharing site for [Arctis Sound Manager](https://github.com/loteran/Arctis-Sound-Manager).
+Community preset & theme sharing site for [Arctis Sound Manager](https://github.com/loteran/Arctis-Sound-Manager).
 
-Users can browse, upvote, and import EQ presets shared by the community directly into ASM via the `arctis-asm://` deep link protocol. Presets are submitted from inside ASM (Share button) and land on this page pre-filled.
+Users can browse, upvote, and import EQ presets **and UI color themes** shared by the community directly into ASM via the `arctis-asm://` deep link protocol. Both are submitted from inside ASM (Share button) and land on this page pre-filled. Presets and themes live side by side on the same page, share the same Supabase project and the same GitHub login, but use entirely separate tables/votes — sharing one does not affect the other.
 
 ---
 
@@ -26,7 +26,12 @@ This creates:
 - `presets` table with RLS policies
 - `votes` table with RLS policies
 - `toggle_vote()` stored function (security definer, so vote counts are consistent)
-- Indexes for fast filtering and sorting
+- `themes` table with RLS policies (same pattern as `presets`, but stores a `colors` jsonb object instead of EQ `data`, and has no `channel` constraint)
+- `theme_votes` table with RLS policies (same pattern as `votes`)
+- `toggle_theme_vote()` stored function (security definer, mirrors `toggle_vote()` for the `themes` table)
+- Indexes for fast filtering and sorting on both preset and theme tables
+
+The theme part of the script (from the `ASM Themes` header onward) uses `create table if not exists`, `create index if not exists`, `create or replace function`, and `drop policy if exists` before each `create policy`, so it is safe to re-run — e.g. if you're adding theme sharing to a project that already has the `presets`/`votes` tables from an earlier run of this file.
 
 ---
 
@@ -129,6 +134,53 @@ https://loteran.github.io/asm-presets/?submit=1
 ```
 
 The site reads these URL params, switches to Submit mode, and pre-fills the form. The user only needs to click **Submit Preset** (after logging in with GitHub).
+
+---
+
+## How theme sharing works
+
+The site adds a **Presets / Themes** toggle at the top of the page (`contentType` in `app.js`). Everything below it — the browse grid, the search/sort bar, and the submit form — swaps between the preset flow and the theme flow. The preset state (`presets`, `myVotes`, `form`, …) and the theme state (`themes`, `myThemeVotes`, `themeForm`, …) are fully independent, so sharing a theme can never affect a preset's votes or vice versa.
+
+### Deep link contract
+
+ASM generates a theme deep link of the form:
+
+```
+arctis-asm://import-theme?data=<base64url(json, no padding)>
+json = {"v":1,"name":<string>,"colors":{ ...15 keys... }}
+```
+
+The 15 `colors` keys (values are `"#rrggbb"` or `"#rgb"` strings):
+
+```
+BG_MAIN, BG_SIDEBAR, BG_CARD, BG_BUTTON, BG_BUTTON_HOVER, BG_SIDEBAR_ACTIVE,
+ACCENT, ACCENT2, TEXT_PRIMARY, TEXT_SECONDARY, BORDER,
+COLOR_GAME, COLOR_CHAT, COLOR_AUX, COLOR_HDMI
+```
+
+### Submission URL
+
+ASM opens the browser at:
+
+```
+https://loteran.github.io/asm-presets/?submit=1&type=theme
+  &data=<url-encoded arctis-asm://import-theme deep link>
+  &name=<url-encoded theme name>
+```
+
+`app.js`'s `init()` checks for `type=theme` to switch into theme-submit mode (as opposed to the default preset-submit mode used when `type` is absent/`preset`), and pre-fills `themeForm.name` / `themeForm.link` from the `name` / `data` params.
+
+### Decoding the deep link (base64url → JSON)
+
+`themeForm.link` holds the **full** deep link (`arctis-asm://import-theme?data=...`), not just the inner payload. The site extracts the inner base64url string via `new URL(link).searchParams.get('data')`, then decodes it:
+
+1. Convert base64url to base64: replace `-` → `+`, `_` → `/`, then re-pad with `=` to a multiple of 4 characters.
+2. `atob()` the result to get a binary string.
+3. Convert to UTF-8 text (values can contain accented/non-ASCII theme names): map the binary string to a `Uint8Array` and run it through `TextDecoder('utf-8')` before `JSON.parse`. Naive `atob()` alone would mangle any non-ASCII characters.
+
+This logic lives in `decodeBase64UrlJson()` / `decodeThemeLink()` in `app.js`. On submit, the decoded `colors` object (not the raw link) is what gets stored in the `themes.colors` jsonb column — the `link` column keeps the original deep link so "Import in ASM" and "Copy link" keep working unchanged.
+
+Each theme card renders a row of 15 color swatches (`themeSwatches()` / `.theme-swatches` / `.swatch` in `index.html`) built from `colors` in the fixed key order above, so browsing gives an at-a-glance preview before importing.
 
 ---
 
