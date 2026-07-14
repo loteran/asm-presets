@@ -286,37 +286,46 @@
           hex(colors.COLOR_HDMI, accent2),
         ];
 
-        // Sidebar: three entries, the middle one active with an accent marker.
+        // This mirrors ASM's home page: an icon sidebar, and one card per audio
+        // channel with a vertical volume slider filled in that channel's colour.
+        var navIcons = ['&#9673;', '&#9776;', '&#9881;'];   // device · mixer · settings
         var nav = '';
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < navIcons.length; i++) {
           var on = i === 1;
           nav += '<div class="tp-nav' + (on ? ' tp-nav-on' : '') + '"'
                + ' style="background:' + (on ? active : 'transparent') + '">'
-               + '<i style="background:' + (on ? accent : text2) + '"></i>'
+               + '<i style="color:' + (on ? accent : text2) + '">' + navIcons[i] + '</i>'
                + '<u style="background:' + (on ? text : text2) + '"></u>'
                + '</div>';
         }
 
-        // Card: the four channel faders, in the theme's per-channel colours.
-        var bars = '';
-        var heights = [70, 45, 85, 55];
+        var names   = ['GAME', 'CHAT', 'AUX', 'HDMI'];
+        var volumes = [72, 45, 88, 60];
+        var cards   = '';
         for (var j = 0; j < chans.length; j++) {
-          bars += '<div class="tp-fader" style="background:' + border + '">'
-                + '<span style="background:' + chans[j] + ';height:' + heights[j] + '%"></span>'
-                + '</div>';
+          cards += '<div class="tp-chan" style="background:' + card + ';border-color:' + border + '">'
+                +    '<b style="color:' + text + '">' + volumes[j] + '</b>'
+                +    '<div class="tp-slider" style="background:' + button + '">'
+                +      '<span style="background:' + chans[j] + ';height:' + volumes[j] + '%"></span>'
+                +      '<em style="background:' + chans[j] + ';bottom:calc(' + volumes[j] + '% - 3px)"></em>'
+                +    '</div>'
+                +    '<small style="color:' + text2 + '">' + names[j] + '</small>'
+                +  '</div>';
         }
 
         return ''
           + '<div class="tp" style="background:' + main + ';border-color:' + border + '">'
           +   '<div class="tp-side" style="background:' + side + ';border-color:' + border + '">' + nav + '</div>'
           +   '<div class="tp-body">'
-          +     '<div class="tp-card" style="background:' + card + ';border-color:' + border + '">'
-          +       '<div class="tp-bars">' + bars + '</div>'
+          +     '<div class="tp-head">'
+          +       '<u style="background:' + text + '"></u>'
+          +       '<span class="tp-pill" style="background:' + accent + '"></span>'
+          +       '<span class="tp-dot" style="background:' + accent2 + '"></span>'
           +     '</div>'
+          +     '<div class="tp-chans">' + cards + '</div>'
           +     '<div class="tp-row">'
           +       '<span class="tp-btn" style="background:' + button + ';border-color:' + border + '"></span>'
           +       '<span class="tp-btn tp-btn-accent" style="background:' + accent + '"></span>'
-          +       '<span class="tp-dot" style="background:' + accent2 + '"></span>'
           +     '</div>'
           +   '</div>'
           + '</div>';

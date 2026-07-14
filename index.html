@@ -682,75 +682,94 @@
 
     .tp {
       display: flex;
-      height: 96px;
+      height: 148px;
       border: 1px solid;
       border-radius: 8px;
       overflow: hidden;
     }
 
     .tp-side {
-      width: 34%;
-      max-width: 90px;
-      padding: 7px 6px;
+      width: 46px;
+      flex: none;
+      padding: 8px 5px;
       border-right: 1px solid;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
     }
 
     .tp-nav {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 5px;
-      padding: 3px 4px;
-      border-radius: 4px;
+      gap: 3px;
+      padding: 5px 2px;
+      border-radius: 5px;
     }
 
-    .tp-nav i { width: 7px;  height: 7px; border-radius: 2px; flex: none; }
-    .tp-nav u { height: 4px; border-radius: 2px; flex: 1; opacity: 0.55; }
-    .tp-nav-on u { opacity: 0.85; }
+    .tp-nav i { font-size: 11px; line-height: 1; font-style: normal; }
+    .tp-nav u { width: 60%; height: 3px; border-radius: 2px; opacity: 0.5; }
+    .tp-nav-on u { opacity: 0.9; }
 
     .tp-body {
       flex: 1;
       padding: 8px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 7px;
       min-width: 0;
     }
 
-    .tp-card {
+    .tp-head { display: flex; align-items: center; gap: 6px; }
+    .tp-head u { width: 42px; height: 5px; border-radius: 3px; opacity: 0.85; }
+    .tp-pill  { width: 22px; height: 8px; border-radius: 5px; }
+
+    /* One card per audio channel — ASM's home page */
+    .tp-chans { flex: 1; display: flex; gap: 5px; min-height: 0; }
+
+    .tp-chan {
       flex: 1;
       border: 1px solid;
       border-radius: 5px;
-      padding: 7px;
+      padding: 5px 2px 4px;
       display: flex;
-      align-items: flex-end;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
     }
 
-    .tp-bars {
-      display: flex;
-      align-items: flex-end;
-      gap: 5px;
-      width: 100%;
-      height: 100%;
-    }
+    .tp-chan b     { font-size: 7px; font-weight: 700; line-height: 1; }
+    .tp-chan small { font-size: 5.5px; letter-spacing: 0.4px; line-height: 1; }
 
-    .tp-fader {
+    /* Vertical volume slider: groove, coloured fill, handle */
+    .tp-slider {
+      position: relative;
+      width: 5px;
       flex: 1;
-      height: 100%;
       border-radius: 3px;
-      display: flex;
-      align-items: flex-end;
-      overflow: hidden;
+      min-height: 0;
     }
 
-    .tp-fader span { display: block; width: 100%; border-radius: 3px; }
+    .tp-slider span {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      border-radius: 3px;
+    }
+
+    .tp-slider em {
+      position: absolute;
+      left: 50%;
+      width: 9px;
+      height: 9px;
+      margin-left: -4.5px;
+      border-radius: 50%;
+    }
 
     .tp-row { display: flex; align-items: center; gap: 5px; }
-    .tp-btn { width: 26px; height: 9px; border: 1px solid; border-radius: 3px; }
-    .tp-btn-accent { width: 18px; border-color: transparent; }
-    .tp-dot { width: 9px; height: 9px; border-radius: 50%; margin-left: auto; }
+    .tp-btn { width: 30px; height: 9px; border: 1px solid; border-radius: 3px; }
+    .tp-btn-accent { width: 20px; border-color: transparent; }
+    .tp-dot { width: 8px; height: 8px; border-radius: 50%; margin-left: auto; }
   </style>
 </head>
 <body x-data="app()" x-init="init()">
