@@ -677,6 +677,80 @@
       .header-inner { padding: 0; }
       .main-content { padding: 1rem 1rem 3rem; }
     }
+    /* ── Theme preview: a miniature of the ASM window, painted by the theme ── */
+    .theme-preview { margin-bottom: 0.75rem; }
+
+    .tp {
+      display: flex;
+      height: 96px;
+      border: 1px solid;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tp-side {
+      width: 34%;
+      max-width: 90px;
+      padding: 7px 6px;
+      border-right: 1px solid;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .tp-nav {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 4px;
+      border-radius: 4px;
+    }
+
+    .tp-nav i { width: 7px;  height: 7px; border-radius: 2px; flex: none; }
+    .tp-nav u { height: 4px; border-radius: 2px; flex: 1; opacity: 0.55; }
+    .tp-nav-on u { opacity: 0.85; }
+
+    .tp-body {
+      flex: 1;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .tp-card {
+      flex: 1;
+      border: 1px solid;
+      border-radius: 5px;
+      padding: 7px;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .tp-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .tp-fader {
+      flex: 1;
+      height: 100%;
+      border-radius: 3px;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .tp-fader span { display: block; width: 100%; border-radius: 3px; }
+
+    .tp-row { display: flex; align-items: center; gap: 5px; }
+    .tp-btn { width: 26px; height: 9px; border: 1px solid; border-radius: 3px; }
+    .tp-btn-accent { width: 18px; border-color: transparent; }
+    .tp-dot { width: 9px; height: 9px; border-radius: 50%; margin-left: auto; }
   </style>
 </head>
 <body x-data="app()" x-init="init()">
@@ -944,6 +1018,9 @@
               </div>
             </div>
 
+            <!-- Preview: miniature of the ASM window in this theme's colors -->
+            <div class="theme-preview" x-html="themePreviewHtml(theme.colors)"></div>
+
             <!-- Color swatch preview -->
             <div class="theme-swatches">
               <template x-for="hex in themeSwatches(theme)" :key="hex + Math.random()">
@@ -1171,7 +1248,8 @@
           <!-- Color preview (decoded from the link) -->
           <template x-if="themeForm.link && decodeThemeLink(themeForm.link)">
             <div class="form-group">
-              <label class="form-label">Color preview</label>
+              <label class="form-label">Preview</label>
+              <div class="theme-preview" x-html="themePreviewHtml(decodeThemeLink(themeForm.link))"></div>
               <div class="theme-swatches theme-swatch-preview">
                 <template x-for="hex in themeSwatchesFromColors(decodeThemeLink(themeForm.link))" :key="hex + Math.random()">
                   <div class="swatch" :style="`background:${hex}`" :title="hex"></div>

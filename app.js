@@ -259,6 +259,69 @@
         return this.themeSwatchesFromColors(theme && theme.colors);
       },
 
+      // A miniature of the ASM window, painted with the theme's colors: colour
+      // dots alone say nothing about what a theme actually looks like.
+      // Injected with x-html, so every value is validated as a hex colour first —
+      // `colors` comes from the database and must never be trusted as markup.
+      themePreviewHtml(colors) {
+        if (!colors) return '';
+        function hex(v, fallback) {
+          return (typeof v === 'string' && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v))
+            ? v : fallback;
+        }
+        var main    = hex(colors.BG_MAIN,           '#0f1520');
+        var side    = hex(colors.BG_SIDEBAR,        main);
+        var active  = hex(colors.BG_SIDEBAR_ACTIVE, side);
+        var card    = hex(colors.BG_CARD,           main);
+        var button  = hex(colors.BG_BUTTON,         card);
+        var accent  = hex(colors.ACCENT,            '#f59e0b');
+        var accent2 = hex(colors.ACCENT2,           accent);
+        var text    = hex(colors.TEXT_PRIMARY,      '#ffffff');
+        var text2   = hex(colors.TEXT_SECONDARY,    text);
+        var border  = hex(colors.BORDER,            '#2a3040');
+        var chans   = [
+          hex(colors.COLOR_GAME, accent),
+          hex(colors.COLOR_CHAT, accent2),
+          hex(colors.COLOR_AUX,  accent),
+          hex(colors.COLOR_HDMI, accent2),
+        ];
+
+        // Sidebar: three entries, the middle one active with an accent marker.
+        var nav = '';
+        for (var i = 0; i < 3; i++) {
+          var on = i === 1;
+          nav += '<div class="tp-nav' + (on ? ' tp-nav-on' : '') + '"'
+               + ' style="background:' + (on ? active : 'transparent') + '">'
+               + '<i style="background:' + (on ? accent : text2) + '"></i>'
+               + '<u style="background:' + (on ? text : text2) + '"></u>'
+               + '</div>';
+        }
+
+        // Card: the four channel faders, in the theme's per-channel colours.
+        var bars = '';
+        var heights = [70, 45, 85, 55];
+        for (var j = 0; j < chans.length; j++) {
+          bars += '<div class="tp-fader" style="background:' + border + '">'
+                + '<span style="background:' + chans[j] + ';height:' + heights[j] + '%"></span>'
+                + '</div>';
+        }
+
+        return ''
+          + '<div class="tp" style="background:' + main + ';border-color:' + border + '">'
+          +   '<div class="tp-side" style="background:' + side + ';border-color:' + border + '">' + nav + '</div>'
+          +   '<div class="tp-body">'
+          +     '<div class="tp-card" style="background:' + card + ';border-color:' + border + '">'
+          +       '<div class="tp-bars">' + bars + '</div>'
+          +     '</div>'
+          +     '<div class="tp-row">'
+          +       '<span class="tp-btn" style="background:' + button + ';border-color:' + border + '"></span>'
+          +       '<span class="tp-btn tp-btn-accent" style="background:' + accent + '"></span>'
+          +       '<span class="tp-dot" style="background:' + accent2 + '"></span>'
+          +     '</div>'
+          +   '</div>'
+          + '</div>';
+      },
+
       // Extract the `colors` object from a full arctis-asm://import-theme
       // deep link: arctis-asm://import-theme?data=<base64url(json)>.
       // Returns null if the link is missing/malformed.
