@@ -228,8 +228,13 @@
         }
       },
 
+      // ASM's own channel colours (gui/theme.py, default theme), so a "Game" badge
+      // here is the same colour as the Game channel inside the app. Media is the
+      // one exception: ASM's purple (#9B59B6) only reaches 3.7:1 on this
+      // background, under the 4.5:1 minimum for small text, so the badge uses a
+      // lightened version of it.
       channelColor(channel) {
-        var colors = { Game: '#3b82f6', Chat: '#22c55e', Mic: '#eab308', Media: '#a855f7' };
+        var colors = { Game: '#04C5A8', Chat: '#2791CE', Mic: '#FB4A00', Media: '#B07CC9' };
         return colors[channel] || '#8D96AA';
       },
 

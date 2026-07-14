@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ASM Presets — Community EQ Presets</title>
+  <title>ASM Community — EQ Presets &amp; Themes for Arctis Sound Manager</title>
+  <meta name="description" content="Browse, vote for and import community EQ presets and color themes for Arctis Sound Manager." />
+  <meta name="theme-color" content="#171C22" />
   <link rel="icon" type="image/png" href="asm-logo.png" />
   <link rel="apple-touch-icon" href="asm-logo.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -26,10 +28,8 @@
       --text-secondary: #8D96AA;
       --border:     #2A333D;
 
-      --ch-game:  #3b82f6;
-      --ch-chat:  #22c55e;
-      --ch-mic:   #eab308;
-      --ch-media: #a855f7;
+      /* Channel colours live in app.js (channelColor()), which is what the badges
+         actually read — the --ch-* tokens that used to sit here were dead. */
 
       --radius-sm: 6px;
       --radius-md: 10px;
@@ -289,7 +289,7 @@
       overflow: hidden;
     }
     .preset-card:hover {
-      border-color: rgba(251, 74, 0, 0.35);
+      border-color: rgba(34, 211, 180, 0.35);
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     }
 
@@ -336,15 +336,15 @@
     .badge-channel { color: #fff; }
 
     .badge-new {
-      background: rgba(251, 74, 0, 0.2);
+      background: rgba(34, 211, 180, 0.2);
       color: var(--accent);
-      border: 1px solid rgba(251, 74, 0, 0.4);
+      border: 1px solid rgba(34, 211, 180, 0.4);
     }
 
     .badge-official {
-      background: rgba(251, 74, 0, 0.15);
-      color: #ffa270;
-      border: 1px solid rgba(251, 74, 0, 0.3);
+      background: rgba(34, 211, 180, 0.15);
+      color: #8FEFDB;
+      border: 1px solid rgba(34, 211, 180, 0.3);
     }
 
     .card-game {
@@ -399,11 +399,11 @@
     }
     .vote-btn:hover { background: #3a444d; color: var(--text-primary); }
     .vote-btn.voted {
-      background: rgba(251, 74, 0, 0.15);
+      background: rgba(34, 211, 180, 0.15);
       color: var(--accent);
-      border-color: rgba(251, 74, 0, 0.4);
+      border-color: rgba(34, 211, 180, 0.4);
     }
-    .vote-btn.voted:hover { background: rgba(251, 74, 0, 0.25); }
+    .vote-btn.voted:hover { background: rgba(34, 211, 180, 0.25); }
 
     .vote-icon {
       font-size: 0.9rem;
@@ -598,8 +598,8 @@
     .btn-cancel:hover { color: var(--text-primary); background: #3a444d; }
 
     .login-prompt {
-      background: rgba(251, 74, 0, 0.08);
-      border: 1px solid rgba(251, 74, 0, 0.25);
+      background: rgba(34, 211, 180, 0.08);
+      border: 1px solid rgba(34, 211, 180, 0.25);
       border-radius: var(--radius-sm);
       padding: 0.85rem 1rem;
       font-size: 0.85rem;
@@ -783,10 +783,10 @@
 
       <a class="brand" href="." @click.prevent="mode = 'browse'">
         <img class="brand-icon" src="asm-logo.png" alt="Arctis Sound Manager" />
-        <span class="brand-text"><span>ASM</span> Presets</span>
+        <span class="brand-text"><span>ASM</span> Community</span>
       </a>
 
-      <span class="tagline">Community EQ presets for Arctis Sound Manager</span>
+      <span class="tagline">Community EQ presets &amp; color themes for Arctis Sound Manager</span>
 
       <div class="header-actions">
 
