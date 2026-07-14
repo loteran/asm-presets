@@ -4,20 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASM Presets — Community EQ Presets</title>
+  <link rel="icon" type="image/png" href="asm-logo.png" />
+  <link rel="apple-touch-icon" href="asm-logo.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     /* =====================================================
        DESIGN TOKENS
        ===================================================== */
     :root {
-      --bg-main:    #16191E;
-      --bg-card:    #1C2026;
-      --bg-button:  #2D363E;
-      --accent:     #FB4A00;
-      --accent-dim: #c23a00;
-      --text-primary:   #C8C8C8;
+      /* Palette taken from the app logo: charcoal body, mint-green accent.
+         The logo never puts white on the green — it puts the green on the
+         charcoal — so text sitting on --accent uses --on-accent, not #fff
+         (white on mint is ~1.9:1 contrast, unreadable). */
+      --bg-main:    #171C22;
+      --bg-card:    #1E252D;
+      --bg-button:  #2A333D;
+      --accent:     #22D3B4;
+      --accent-dim: #16A98F;
+      --on-accent:  #0E1519;
+      --text-primary:   #E4E9EE;
       --text-secondary: #8D96AA;
-      --border:     #2A3038;
+      --border:     #2A333D;
 
       --ch-game:  #3b82f6;
       --ch-chat:  #22c55e;
@@ -84,7 +91,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(22, 25, 30, 0.92);
+      background: rgba(23, 28, 34, 0.92);   /* --bg-main, translucent */
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
       padding: 0 1.5rem;
@@ -108,17 +115,11 @@
     }
 
     .brand-icon {
-      width: 30px;
-      height: 30px;
-      background: var(--accent);
+      width: 32px;
+      height: 32px;
       border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: -1px;
+      display: block;
+      flex: none;
     }
 
     .brand-text {
@@ -157,13 +158,13 @@
 
     .btn-accent {
       background: var(--accent);
-      color: #fff;
+      color: var(--on-accent);
     }
     .btn-accent:hover { background: var(--accent-dim); }
 
     .btn-import {
       background: var(--accent);
-      color: #fff;
+      color: var(--on-accent);
       font-size: 0.8rem;
       padding: 0.4rem 0.85rem;
       width: 100%;
@@ -581,7 +582,7 @@
     .btn-submit {
       flex: 1;
       background: var(--accent);
-      color: #fff;
+      color: var(--on-accent);
       padding: 0.65rem 1rem;
       font-size: 0.9rem;
     }
@@ -781,7 +782,7 @@
     <div class="header-inner">
 
       <a class="brand" href="." @click.prevent="mode = 'browse'">
-        <div class="brand-icon">A</div>
+        <img class="brand-icon" src="asm-logo.png" alt="Arctis Sound Manager" />
         <span class="brand-text"><span>ASM</span> Presets</span>
       </a>
 
